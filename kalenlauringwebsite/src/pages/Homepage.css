@@ -1,0 +1,36 @@
+.typewriter-container {
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.typed-out-responsive {
+  overflow: hidden;
+  border-right: .15em solid black;
+  white-space: nowrap;
+  animation: 
+    typing 1.8s steps(25, end) forwards,
+    blink-caret .75s step-end infinite;
+  font-size: clamp(1.2rem, 4vw, 2.5rem); /* made this responsive */
+  font-weight: bold;
+  width: 0;
+  display: inline-block;
+}
+
+.fade-element {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-element.is-visible {
+  opacity: 1;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: black; }
+}
