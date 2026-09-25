@@ -1,11 +1,11 @@
 import Layout from "../components/Layout";
 import TileGrid from "../components/TileGrid";
-import { homePage } from "../data/homepage";
+import { portfolioPage } from "../data/homepage";
 
-export default function Homepage() {
+export default function Portfolio() {
   return (
     <Layout>
-      <TileGrid page={homePage} />
+      <TileGrid page={portfolioPage} />
     </Layout>
   );
 }

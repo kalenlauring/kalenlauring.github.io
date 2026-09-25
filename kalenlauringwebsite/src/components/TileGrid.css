@@ -1,3 +1,13 @@
+/* tiles fade in (see the reveal rules below) */
+.fade-element {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-element.is-visible {
+  opacity: 1;
+}
+
 /* Headings are sized to the grid's width (cqi) so all the big headings match.
    The intro spans the full width on mobile and 3 of 4 columns (~75%) on
    desktop, so 6.5% of its width keeps "Hello, I'm Kalen Lauring!" on one line. */
@@ -14,9 +24,10 @@
 
 /* 2 columns on mobile, 4 from 640px (keep in sync with WIDE in TileGrid.tsx) */
 .tile-grid {
+  --gap: 36px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 36px;
+  gap: var(--gap);
 }
 
 .tile-span-2,
@@ -35,6 +46,24 @@
 
   .tile-rows-2 {
     grid-row: span 2;
+  }
+}
+
+/* The squares are a quarter of the grid, but never wider than a quarter of a
+   1172px grid (266px squares), which lets the homepage's three rows fit a
+   1920x1080 screen without scrolling. On wider screens the text columns take
+   the extra width instead, so the photos stay the same size. */
+@media (min-width: 640px) {
+  .tile-grid {
+    --square: calc((min(100%, 1172px) - 3 * var(--gap)) / 4);
+  }
+
+  .tile-grid-squares-left {
+    grid-template-columns: var(--square) var(--square) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tile-grid-squares-right {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--square) var(--square);
   }
 }
 
@@ -169,6 +198,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .fade-element,
   .tile.fade-element,
   .tile-link.fade-element,
   .tile-photo img {

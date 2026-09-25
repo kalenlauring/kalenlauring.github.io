@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { about, experience, mobileOrder, tiles } from "../data/homepage";
-import type { TextBlock, Tile } from "../data/homepage";
+import { Link } from "react-router-dom";
+import { about, experience, palette } from "../data/homepage";
+import type { PageTiles, TextBlock, Tile } from "../data/homepage";
 import Intro from "./Intro";
 import "./TileGrid.css";
 
@@ -16,8 +17,8 @@ const subscribeWide = (onChange: () => void) => {
 };
 const isWide = () => window.matchMedia(WIDE).matches;
 
-const tilesById = new Map(tiles.map((tile) => [tile.id, tile]));
-const mobileTiles = mobileOrder.flatMap((id) => tilesById.get(id) ?? []);
+const prefersReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const blocks: Record<TextBlock, ReactNode> = {
   intro: <Intro />,
@@ -36,11 +37,20 @@ const blocks: Record<TextBlock, ReactNode> = {
       <h2 className="tile-display">{experience.heading}</h2>
       <ul className="tile-body space-y-2 text-[15px] lg:text-base leading-snug">
         {experience.entries.map((entry, i) => (
-          <li key={i}>
-            <p className="font-bold">{entry.title}</p>
-            <p>
-              {entry.description} <span className="text-neutral-600">{entry.stack}</span>
-            </p>
+          <li key={i} className="flex gap-2.5">
+            {/* round bullet on the title's line, alternating blue and pink */}
+            <span
+              aria-hidden="true"
+              className="mt-[0.4em] size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: i % 2 === 0 ? palette.blue : palette.pink }}
+            />
+            <div>
+              <p className="font-bold">{entry.title}</p>
+              <p>
+                {entry.description}
+                {entry.stack && <span className="text-neutral-600"> {entry.stack}</span>}
+              </p>
+            </div>
           </li>
         ))}
       </ul>
@@ -49,12 +59,15 @@ const blocks: Record<TextBlock, ReactNode> = {
 };
 
 interface TileGridProps {
-  // reduced motion: show everything at once
-  instant: boolean;
+  page: PageTiles;
 }
 
-export default function TileGrid({ instant }: TileGridProps) {
+export default function TileGrid({ page }: TileGridProps) {
   const wide = useSyncExternalStore(subscribeWide, isWide);
+  // reduced motion: show everything at once
+  const [instant] = useState(prefersReducedMotion);
+  const tilesById = new Map(page.tiles.map((tile) => [tile.id, tile]));
+  const tiles = wide ? page.tiles : page.mobileOrder.flatMap((id) => tilesById.get(id) ?? []);
   const grid = useRef<HTMLDivElement>(null);
   // tile id -> position in the stagger batch it was revealed with
   const [revealed, setRevealed] = useState<Map<string, number>>(() => new Map());
@@ -92,8 +105,8 @@ export default function TileGrid({ instant }: TileGridProps) {
 
   return (
     <div className="tile-grid-container">
-      <div ref={grid} className="tile-grid">
-        {(wide ? tiles : mobileTiles).map((tile) => {
+      <div ref={grid} className={`tile-grid tile-grid-squares-${page.squares}`}>
+        {tiles.map((tile) => {
           const order = revealed.get(tile.id);
           return (
             <TileView
@@ -148,19 +161,28 @@ function TileView({ tile, visible, delay }: TileViewProps) {
         </div>
       );
     }
-    case "link":
-      return (
-        <a
-          {...reveal}
-          {...newTab}
-          href={tile.href}
-          className={`${fade} tile-square tile-link`}
-          style={{ ...reveal.style, backgroundColor: tile.color }}
-        >
+    case "link": {
+      const props = {
+        ...reveal,
+        className: `${fade} tile-square tile-link`,
+        style: { ...reveal.style, backgroundColor: tile.color },
+      };
+      const content = (
+        <>
           <span className="tile-label">{tile.label}</span>
           <span className="tile-arrow" aria-hidden="true">↗</span>
+        </>
+      );
+      return "to" in tile ? (
+        <Link {...props} to={tile.to}>
+          {content}
+        </Link>
+      ) : (
+        <a {...props} {...newTab} href={tile.href}>
+          {content}
         </a>
       );
+    }
     case "empty":
       return <div aria-hidden="true" />;
     case "color":
