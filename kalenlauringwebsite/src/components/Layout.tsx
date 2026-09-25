@@ -1,30 +1,15 @@
-import { useEffect } from "react";
 import type { ReactNode } from "react";
-import TopNav from "./TopNav";
-import BottomNav from "./BottomNav";
 
 interface LayoutProps {
   children: ReactNode;
-  fadeDelay?: number;
 }
 
-export default function Layout({ children, fadeDelay = 100 }: LayoutProps) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const elements = document.querySelectorAll('.fade-element');
-      elements.forEach(el => el.classList.add('is-visible'));
-    }, fadeDelay);
-
-    return () => clearTimeout(timer);
-  }, [fadeDelay]);
-
+export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen w-full bg-[#FFFFFC] text-black flex flex-col px-4 overflow-x-hidden">
-      <TopNav />
-      <div className="flex-1 flex items-center justify-center">
+    <div className="min-h-screen w-full bg-white text-black px-4 py-4 sm:py-8 overflow-x-clip">
+      <main className="w-full max-w-[1220px] mx-auto p-3 sm:p-6">
         {children}
-      </div>
-      <BottomNav />
+      </main>
     </div>
   );
 }

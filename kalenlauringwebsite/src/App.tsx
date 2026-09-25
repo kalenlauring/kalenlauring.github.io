@@ -1,6 +1,5 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Homepage from './pages/Homepage';
-import About from './pages/About';
 import './App.css';
 
 function App() {
@@ -8,7 +7,8 @@ function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Homepage />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/about" element={<Navigate to="/" replace />} />
+        <Route path="/portfolio" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
   );

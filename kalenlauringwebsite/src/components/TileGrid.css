@@ -1,0 +1,188 @@
+/* Headings are sized to the grid's width (cqi) so all the big headings match.
+   The intro spans the full width on mobile and 3 of 4 columns (~75%) on
+   desktop, so 6.5% of its width keeps "Hello, I'm Kalen Lauring!" on one line. */
+.tile-grid-container {
+  container-type: inline-size;
+  --display-size: clamp(1.1rem, 6.5cqi, 3.25rem);
+}
+
+@media (min-width: 640px) {
+  .tile-grid-container {
+    --display-size: clamp(1.1rem, 4.875cqi, 3.25rem);
+  }
+}
+
+/* 2 columns on mobile, 4 from 640px (keep in sync with WIDE in TileGrid.tsx) */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px;
+}
+
+.tile-span-2,
+.tile-span-3 {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .tile-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tile-span-3 {
+    grid-column: span 3;
+  }
+
+  .tile-rows-2 {
+    grid-row: span 2;
+  }
+}
+
+/* reveal: fade + a slight scale, staggered via --delay. `scale` and `translate`
+   are separate properties so the reveal and the hover lift don't fight. */
+.tile.fade-element {
+  scale: 0.94;
+  transition:
+    opacity 300ms ease-out var(--delay, 0ms),
+    scale 300ms ease-out var(--delay, 0ms);
+}
+
+.tile.fade-element.is-visible {
+  scale: none;
+}
+
+/* squares stay square even if a text block makes its row taller, and sit at
+   the top of the row so they line up with top-aligned headings */
+.tile-square {
+  display: block;
+  aspect-ratio: 1;
+  align-self: start;
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.tile-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* space between a big heading and the text under it, the same in every block */
+.tile-body {
+  margin-top: max(12px, calc(var(--display-size) * 0.4));
+}
+
+.tile-text-top {
+  justify-content: flex-start;
+}
+
+/* Trim a top-aligned heading's box down to the top of its capital letters so
+   the letters line up with the top of the tiles beside it. */
+.tile-text-top > .tile-display:first-child {
+  text-box: trim-start cap alphabetic;
+}
+
+/* Browsers without text-box: pull the heading up by the space above the
+   capitals instead. 0.2375em is that space for Inter at line-height 1.2. */
+@supports not (text-box: trim-start cap alphabetic) {
+  .tile-text-top > .tile-display:first-child {
+    margin-top: calc(var(--display-size) * -0.2375);
+  }
+}
+
+.tile-display {
+  font-size: var(--display-size);
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.tile-photo img,
+.tile-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tile-photo img {
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+
+.tile-photo:hover img {
+  transform: scale(1.05);
+}
+
+.tile-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8cqi;
+  background-color: #e5e5e5;
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* clickable tiles: darken + lift */
+.tile-link {
+  cursor: pointer;
+  color: #000;
+}
+
+.tile-link.fade-element {
+  transition:
+    opacity 300ms ease-out var(--delay, 0ms),
+    scale 300ms ease-out var(--delay, 0ms),
+    translate 200ms ease,
+    filter 200ms ease;
+}
+
+.tile-link:hover,
+.tile-link:focus-visible {
+  translate: 0 -2px;
+  filter: brightness(0.9);
+}
+
+.tile-link:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 3px;
+}
+
+.tile-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: clamp(1.0625rem, 13cqi, 2.25rem);
+}
+
+.tile-arrow {
+  position: absolute;
+  top: 7cqi;
+  right: 8cqi;
+  font-size: clamp(0.8125rem, 8cqi, 1.375rem);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.fade-element,
+  .tile-link.fade-element,
+  .tile-photo img {
+    transition: none;
+  }
+
+  .tile.fade-element,
+  .tile-link:hover,
+  .tile-link:focus-visible {
+    scale: none;
+    translate: none;
+  }
+
+  .tile-photo:hover img {
+    transform: none;
+  }
+}

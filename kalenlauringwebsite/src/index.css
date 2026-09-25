@@ -1,7 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-page: #ffffff;
+}
+
 @layer base {
   body {
-    @apply bg-neutral-950 text-white;
+    @apply bg-page text-black;
   }
+}
+html {
+  scroll-behavior: smooth;
 }
