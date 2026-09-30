@@ -4,9 +4,10 @@ export default function Intro() {
   return (
     <>
       <h1 className="tile-display">{intro.heading}</h1>
-      <p className="tile-body flex flex-wrap gap-x-3 text-[15px] md:text-lg font-bold">
+      {intro.tagline && <p className="tile-body tile-prose font-bold">{intro.tagline}</p>}
+      <p className={`${intro.tagline ? "mt-1" : "tile-body"} flex flex-wrap gap-x-3 tile-prose font-bold`}>
         <span>{intro.pronouns}</span>
-        <a href={`mailto:${intro.email}`} className="underline hover:opacity-70">
+        <a href={`mailto:${intro.email}`} className="underline hover:opacity-70 [overflow-wrap:anywhere]">
           {intro.email}
         </a>
         <span>{intro.location}</span>

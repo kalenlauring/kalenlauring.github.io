@@ -8,38 +8,67 @@
   opacity: 1;
 }
 
-/* Headings are sized to the grid's width (cqi) so all the big headings match.
-   The intro spans the full width on mobile and 3 of 4 columns (~75%) on
-   desktop, so 6.5% of its width keeps "Hello, I'm Kalen Lauring!" on one line. */
-.tile-grid-container {
-  container-type: inline-size;
-  --display-size: clamp(1.1rem, 6.5cqi, 3.25rem);
+/* One tile size per page, shared by the homepage and the portfolio. It's
+   registered so it resolves to a length once, on the container, and every
+   element inside inherits the same number. */
+@property --tile {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
 }
 
-@media (min-width: 640px) {
+/* 100cqi is the width of the page's content box (<main> in Layout.tsx is the
+   size container). Below 1024px the tiles are two columns wide. */
+.tile-grid-container {
+  --gap: 16px;
+  /* the page's height outside the grid: Layout's padding (16px + 8px above and
+     below) and the nav (a 28px line plus a 20px margin) */
+  --page-chrome: 96px;
+  --tile: calc((100cqi - var(--gap)) / 2);
+  --display-size: clamp(1.125rem, calc(var(--tile) * 0.15), 3.5rem);
+}
+
+/* Desktop: the tiles fill the screen. They're a quarter of the width (the
+   text columns take whatever's left) or small enough for the header row and
+   the 2x2 block (three rows) to fit under the nav, whichever is smaller, and
+   never below 200px. */
+@media (min-width: 1024px) {
   .tile-grid-container {
-    --display-size: clamp(1.1rem, 4.875cqi, 3.25rem);
+    --tile: max(
+      200px,
+      min(
+        (100cqi - 3 * var(--gap)) / 4,
+        (100svh - var(--page-chrome) - 2 * var(--gap)) / 3
+      )
+    );
+    --display-size: clamp(1.5rem, calc(var(--tile) * 0.19), 3.5rem);
   }
 }
 
-/* 2 columns on mobile, 4 from 640px (keep in sync with WIDE in TileGrid.tsx) */
+@media (min-width: 1536px) {
+  .tile-grid-container {
+    --gap: 24px;
+  }
+}
+
+/* body text next to the tiles scales with them */
+.tile-prose {
+  font-size: clamp(0.8125rem, calc(var(--tile) * 0.068), 1.125rem);
+}
+
+/* 2 columns below 1024px, 4 from there (keep in sync with TileGrid.tsx) */
 .tile-grid {
-  --gap: 36px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
 }
 
-.tile-span-2,
-.tile-span-3 {
+/* below 1024px, a span-3 text block sits beside a square and span 2 is full width */
+.tile-span-2 {
   grid-column: span 2;
 }
 
-@media (min-width: 640px) {
-  .tile-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
+@media (min-width: 1024px) {
   .tile-span-3 {
     grid-column: span 3;
   }
@@ -47,23 +76,13 @@
   .tile-rows-2 {
     grid-row: span 2;
   }
-}
-
-/* The squares are a quarter of the grid, but never wider than a quarter of a
-   1172px grid (266px squares), which lets the homepage's three rows fit a
-   1920x1080 screen without scrolling. On wider screens the text columns take
-   the extra width instead, so the photos stay the same size. */
-@media (min-width: 640px) {
-  .tile-grid {
-    --square: calc((min(100%, 1172px) - 3 * var(--gap)) / 4);
-  }
 
   .tile-grid-squares-left {
-    grid-template-columns: var(--square) var(--square) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: var(--tile) var(--tile) minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .tile-grid-squares-right {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--square) var(--square);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--tile) var(--tile);
   }
 }
 
@@ -107,6 +126,26 @@
   justify-content: flex-start;
 }
 
+/* links inside body text (see withLinks.tsx); they open in a new tab */
+.text-link {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.text-link:hover {
+  opacity: 0.7;
+}
+
+.text-link:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+/* long paragraphs stay readable on wide screens */
+.tile-text p.tile-prose {
+  max-width: 65ch;
+}
+
 /* Trim a top-aligned heading's box down to the top of its capital letters so
    the letters line up with the top of the tiles beside it. */
 .tile-text-top > .tile-display:first-child {
@@ -136,11 +175,6 @@
 
 .tile-photo img {
   object-fit: cover;
-  transition: transform 300ms ease;
-}
-
-.tile-photo:hover img {
-  transform: scale(1.05);
 }
 
 .tile-placeholder {
@@ -154,7 +188,8 @@
   text-align: center;
 }
 
-/* clickable tiles: darken + lift */
+/* clickable tiles: darken + lift (color tiles only; photos don't react to
+   hover). Every link gets the focus outline. */
 .tile-link {
   cursor: pointer;
   color: #000;
@@ -168,8 +203,8 @@
     filter 200ms ease;
 }
 
-.tile-link:hover,
-.tile-link:focus-visible {
+.tile-link:not(.tile-photo):hover,
+.tile-link:not(.tile-photo):focus-visible {
   translate: 0 -2px;
   filter: brightness(0.9);
 }
@@ -189,19 +224,10 @@
   font-size: clamp(1.0625rem, 13cqi, 2.25rem);
 }
 
-.tile-arrow {
-  position: absolute;
-  top: 7cqi;
-  right: 8cqi;
-  font-size: clamp(0.8125rem, 8cqi, 1.375rem);
-  line-height: 1;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .fade-element,
   .tile.fade-element,
-  .tile-link.fade-element,
-  .tile-photo img {
+  .tile-link.fade-element {
     transition: none;
   }
 
@@ -210,9 +236,5 @@
   .tile-link:focus-visible {
     scale: none;
     translate: none;
-  }
-
-  .tile-photo:hover img {
-    transform: none;
   }
 }

@@ -1,8 +1,9 @@
 import github from "../assets/github.png";
 import linkedin from "../assets/linkedin.png";
 
-// Everything on the site lives here: text, photos, colors, links, and the tiles
-// on each page. The layout code in src/components/TileGrid.tsx reads from this file.
+// The homepage's text, photos, colors, and tiles, plus the links and nav shared
+// by every page. The layout code in src/components/TileGrid.tsx reads from this
+// file. The portfolio page's content is in portfolio.ts.
 
 // Photos are looked up by filename in src/assets. A missing file shows as a
 // gray placeholder square, so you can add photos later without breaking the build.
@@ -25,21 +26,26 @@ export const links = {
   resume: `${import.meta.env.BASE_URL}resume.pdf`,
   // a page on this site
   portfolio: "/portfolio",
-  // TODO: replace with the game's live URL (or its repo). Used by the game
-  // screenshot and the Play tile.
-  game: "https://github.com/kalenlauring",
 };
 
 // The nav at the top of every page. `to` is a page on this site; `href` opens
 // in a new tab.
 export const nav: ({ label: string; to: string } | { label: string; href: string })[] = [
-  { label: "Home", to: "/" },
-  { label: "Portfolio", to: links.portfolio },
-  { label: "Resume", href: links.resume },
+  { label: "home", to: "/" },
+  { label: "portfolio", to: links.portfolio },
+  { label: "resume", href: links.resume },
 ];
 
-export const intro = {
+export const intro: {
+  heading: string;
+  tagline?: string;
+  pronouns: string;
+  email: string;
+  location: string;
+  socials: { label: string; href: string; icon: string }[];
+} = {
   heading: "Hello, I'm Kalen Lauring!",
+  // optional line under the heading; add `tagline: "..."` here to show one
   pronouns: "she/her",
   email: links.email,
   location: "📍 Medford, MA",
@@ -52,11 +58,17 @@ export const intro = {
 export const about = {
   heading: "About Me",
   paragraphs: [
-    "I am a current Junior at Tufts University majoring in Computer Science and Sociology and minoring Asian American Studies. ",
+    "I'm a current Junior at Tufts University majoring in Computer Science and Sociology, and minoring Asian American Studies. ",
     "In my work with tech, I’m interested in taking on projects that focus on improving our daily lives, both big and small, and creating equitable technology for all users.",
     "In my work with people, I'm interested in working to working within my community to cultivate mutual support and coalition-building through mentorship, advocacy, and community organizing.",
-    "At school, I’ve served on the executive board for Tufts Vietnamese Student Association for the last 3 years, along with Tufts Student Sociology Board, Jumbocode, Symphony Orchestra.",
-    " In my free time, I enjoy listening to NPR’s This American Life, doing the crossword, playing the bass, and hiking with friends. ",
+    "At school, I’ve served on the executive board for Tufts Vietnamese Student Association for the last 3 years, along with Tufts Sociology Advisory Board, Symphony Orchestra, and Jumbocode.",
+    " In my free time, I enjoy listening to NPR’s This American Life, doing the crossword, playing the bass, and hiking with friends!. ",
+  ],
+  // text in the paragraphs to turn into links (the first match in each
+  // paragraph); they open in a new tab
+  paragraphLinks: [
+    { text: "Tufts Sociology Advisory Board", href: "https://as.tufts.edu/sociology/people/student-advisory-board" },
+    { text: "Jumbocode", href: "https://jumbocode.org/projects/school-on-wheels" },
   ],
 };
 
@@ -64,17 +76,6 @@ export const experience = {
   heading: "Recent Work",
   // `stack` is optional
   entries: [
-    {
-      title: "Raven Rhythm",
-      description:
-        "A rhythm game with a custom timing system, beatmap engine, and gameplay systems built in Unity/C#.",
-      stack: "Unity, C#, Audacity, Logic Pro",
-    },
-    {
-      title: "Freelance Web Development",
-      description: "Booking platform for a babysitting service.",
-      stack: "WordPress, custom booking & payment plugins",
-    },
     {
       title: "Product Design & Frontend Development Intern @ NeuroFore",
       description: "Clinical assessment web app.",
@@ -96,11 +97,10 @@ export const experience = {
       description: "Researched and redesigned parts of MALP's teacher training platform.",
       stack: "Figma, UX Research",
     },
-    
   ] as { title: string; description: string; stack?: string }[],
 };
 
-export type TextBlock = "intro" | "about" | "experience";
+export type TextBlock = "intro" | "about";
 
 export type Tile =
   // a square photo; with `href` the whole tile is a link
@@ -113,16 +113,19 @@ export type Tile =
   | { id: string; type: "empty" }
   // a decorative square of color; `label` is optional
   | { id: string; type: "color"; color: string; label?: string }
-  // text spanning 2 or 3 columns, and optionally 2 rows (always full width,
-  // one row, on mobile). Vertically centered unless `alignTop` is set.
-  | { id: string; type: "text"; span: 2 | 3; rows?: 2; alignTop?: boolean; block: TextBlock };
+  // text spanning 2 or 3 columns, and optionally 2 rows, on desktop. Below
+  // 1024px, span 3 sits in the column beside a square and span 2 is full width.
+  // Vertically centered unless `align: "top"` is set.
+  | { id: string; type: "text"; span: 2 | 3; rows?: 2; align?: "top"; block: TextBlock };
 
-// Each page's tiles. Desktop: 4 columns, filled left to right in `tiles` order.
-// Mobile: 2 columns, in `mobileOrder` (tiles left out are hidden on mobile).
+// Each page's tiles. Desktop (1024px and up): 4 columns, filled left to right
+// in `tiles` order. Tablet (640-1023px) and mobile: 2 columns, in
+// `tabletOrder` and `mobileOrder` (tiles left out are hidden at that size).
 // `squares` is which two columns hold the squares on desktop; the other two
-// columns are for text and stretch to fill the width on wide screens.
+// columns are for text and take the rest of the width.
 export interface PageTiles {
   tiles: Tile[];
+  tabletOrder: string[];
   mobileOrder: string[];
   squares: "left" | "right";
 }
@@ -132,37 +135,25 @@ export const homePage: PageTiles = {
   tiles: [
     // row 1
     { id: "headshot", type: "photo", ...photo("headshot.png"), alt: "Kalen Lauring's headshot" },
-    { id: "intro", type: "text", span: 3, alignTop: true, block: "intro" },
+    { id: "intro", type: "text", span: 3, align: "top", block: "intro" },
 
     // rows 2-3: a 2x2 block on the left, About Me on the right across both rows
     { id: "resume", type: "link", label: "Resume", href: links.resume, color: palette.blue },
     { id: "band", type: "photo", ...photo("band.png"), alt: "Kalen playing with her band" },
-    { id: "about", type: "text", span: 2, rows: 2, alignTop: true, block: "about" },
+    { id: "about", type: "text", span: 2, rows: 2, align: "top", block: "about" },
     { id: "water", type: "photo", ...photo("water.png"), alt: "Water and rocks" },
-    { id: "portfolio", type: "link", label: "Portfolio ↗", to: links.portfolio, color: palette.pink },
+    { id: "portfolio", type: "link", label: "Portfolio", to: links.portfolio, color: palette.pink },
+  ],
+  tabletOrder: [
+    "headshot", "intro",
+    "resume", "band",
+    "water", "portfolio",
+    "about",
   ],
   mobileOrder: [
-    "headshot",
-    "intro",
+    "headshot", "intro",
     "about",
     "resume", "band",
     "water", "portfolio",
-  ],
-};
-
-export const portfolioPage: PageTiles = {
-  squares: "right",
-  tiles: [
-    // rows 1-2: Recent Work on the left across both rows, a 2x2 block on the right
-    { id: "experience", type: "text", span: 2, rows: 2, alignTop: true, block: "experience" },
-    { id: "game", type: "photo", ...photo("ravenrhythm.png"), alt: "Play Raven Rhythm", href: links.game },
-    { id: "play", type: "link", label: "Play ↗", href: links.game, color: palette.pink },
-    { id: "water", type: "photo", ...photo("water.png"), alt: "Water and rocks" },
-    { id: "pink", type: "color", color: palette.pink },
-  ],
-  mobileOrder: [
-    "experience",
-    "game", "play",
-    "water", "pink",
   ],
 };

@@ -1,24 +1,24 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { about, experience, palette } from "../data/homepage";
+import { about } from "../data/homepage";
 import type { PageTiles, TextBlock, Tile } from "../data/homepage";
 import Intro from "./Intro";
+import { useStaggeredReveal } from "./useStaggeredReveal";
+import { withLinks } from "./withLinks";
 import "./TileGrid.css";
 
-// matches the breakpoint in TileGrid.css
-const WIDE = "(min-width: 640px)";
-const STAGGER_MS = 60;
+// match the breakpoints in TileGrid.css
+const TABLET = "(min-width: 640px)";
+const DESKTOP = "(min-width: 1024px)";
 
-const subscribeWide = (onChange: () => void) => {
-  const query = window.matchMedia(WIDE);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
+const subscribeLayout = (onChange: () => void) => {
+  const queries = [TABLET, DESKTOP].map((query) => window.matchMedia(query));
+  queries.forEach((query) => query.addEventListener("change", onChange));
+  return () => queries.forEach((query) => query.removeEventListener("change", onChange));
 };
-const isWide = () => window.matchMedia(WIDE).matches;
-
-const prefersReducedMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const getLayout = () =>
+  window.matchMedia(DESKTOP).matches ? "desktop" : window.matchMedia(TABLET).matches ? "tablet" : "mobile";
 
 const blocks: Record<TextBlock, ReactNode> = {
   intro: <Intro />,
@@ -26,34 +26,10 @@ const blocks: Record<TextBlock, ReactNode> = {
     <>
       <h2 className="tile-display">{about.heading}</h2>
       {about.paragraphs.map((text, i) => (
-        <p key={i} className={`${i === 0 ? "tile-body" : "mt-3"} text-[15px] lg:text-lg`}>
-          {text}
+        <p key={i} className={`${i === 0 ? "tile-body" : "mt-3"} tile-prose`}>
+          {withLinks(text, about.paragraphLinks)}
         </p>
       ))}
-    </>
-  ),
-  experience: (
-    <>
-      <h2 className="tile-display">{experience.heading}</h2>
-      <ul className="tile-body space-y-2 text-[15px] lg:text-base leading-snug">
-        {experience.entries.map((entry, i) => (
-          <li key={i} className="flex gap-2.5">
-            {/* round bullet on the title's line, alternating blue and pink */}
-            <span
-              aria-hidden="true"
-              className="mt-[0.4em] size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: i % 2 === 0 ? palette.blue : palette.pink }}
-            />
-            <div>
-              <p className="font-bold">{entry.title}</p>
-              <p>
-                {entry.description}
-                {entry.stack && <span className="text-neutral-600"> {entry.stack}</span>}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
     </>
   ),
 };
@@ -63,60 +39,18 @@ interface TileGridProps {
 }
 
 export default function TileGrid({ page }: TileGridProps) {
-  const wide = useSyncExternalStore(subscribeWide, isWide);
-  // reduced motion: show everything at once
-  const [instant] = useState(prefersReducedMotion);
+  const layout = useSyncExternalStore(subscribeLayout, getLayout);
   const tilesById = new Map(page.tiles.map((tile) => [tile.id, tile]));
-  const tiles = wide ? page.tiles : page.mobileOrder.flatMap((id) => tilesById.get(id) ?? []);
-  const grid = useRef<HTMLDivElement>(null);
-  // tile id -> position in the stagger batch it was revealed with
-  const [revealed, setRevealed] = useState<Map<string, number>>(() => new Map());
-
-  // Reveal tiles as they scroll into view. Tiles entering together (all of the
-  // first screen, then whatever a scroll uncovers) stagger in reading order.
-  useEffect(() => {
-    if (instant || !grid.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const ids = entries
-          .filter((entry) => entry.isIntersecting)
-          .map((entry) => {
-            observer.unobserve(entry.target);
-            return entry.target as HTMLElement;
-          })
-          .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
-          .map((el) => el.dataset.tile!);
-        if (!ids.length) return;
-        setRevealed((prev) => {
-          const next = new Map(prev);
-          ids.forEach((id, i) => next.set(id, i));
-          return next;
-        });
-      },
-      { threshold: 0.15 }
-    );
-
-    grid.current
-      .querySelectorAll("[data-tile]:not(.is-visible)")
-      .forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [instant, wide]);
+  const order = layout === "tablet" ? page.tabletOrder : page.mobileOrder;
+  const tiles = layout === "desktop" ? page.tiles : order.flatMap((id) => tilesById.get(id) ?? []);
+  const { ref: grid, reveal } = useStaggeredReveal<HTMLDivElement>(layout);
 
   return (
     <div className="tile-grid-container">
       <div ref={grid} className={`tile-grid tile-grid-squares-${page.squares}`}>
-        {tiles.map((tile) => {
-          const order = revealed.get(tile.id);
-          return (
-            <TileView
-              key={tile.id}
-              tile={tile}
-              visible={instant || order !== undefined}
-              delay={(order ?? 0) * STAGGER_MS}
-            />
-          );
-        })}
+        {tiles.map((tile) => (
+          <TileView key={tile.id} tile={tile} {...reveal(tile.id)} />
+        ))}
       </div>
     </div>
   );
@@ -138,7 +72,7 @@ function TileView({ tile, visible, delay }: TileViewProps) {
       return (
         <section
           {...reveal}
-          className={`${fade} tile-text tile-span-${tile.span}${tile.rows ? ` tile-rows-${tile.rows}` : ""}${tile.alignTop ? " tile-text-top" : ""}`}
+          className={`${fade} tile-text tile-span-${tile.span}${tile.rows ? ` tile-rows-${tile.rows}` : ""}${tile.align ? ` tile-text-${tile.align}` : ""}`}
         >
           {blocks[tile.block]}
         </section>
@@ -168,10 +102,9 @@ function TileView({ tile, visible, delay }: TileViewProps) {
         style: { ...reveal.style, backgroundColor: tile.color },
       };
       const content = (
-        <>
-          <span className="tile-label">{tile.label}</span>
-          <span className="tile-arrow" aria-hidden="true">↗</span>
-        </>
+        <span className="tile-label">
+          {tile.label}&nbsp;<span aria-hidden="true">↗</span>
+        </span>
       );
       return "to" in tile ? (
         <Link {...props} to={tile.to}>

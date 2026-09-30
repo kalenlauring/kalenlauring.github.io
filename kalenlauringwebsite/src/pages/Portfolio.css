@@ -1,0 +1,207 @@
+/* Tiles come from TileGrid.css: .tile-square keeps them square, .tile-photo
+   fills them with an image, .tile-link adds the hover (color tiles only) and focus styles. The
+   tile size (--tile), gaps, and breakpoints are the homepage's. */
+
+/* Desktop: like the homepage, the page fills the screen under the nav. The
+   project squares are homepage-sized if five fit across, smaller if not. The
+   featured squares take the height that's left after the Other Projects
+   heading (2.45 line-heights of margin and text, plus its bottom margin) and
+   the project row, but leave the description at least one homepage tile of
+   width, and are never below 200px. */
+@media (min-width: 1024px) {
+  .tile-grid-container.portfolio {
+    --square: min(var(--tile), (100cqi - 4 * var(--gap)) / 5);
+    --feature: max(
+      200px,
+      min(
+        (100cqi - 2 * var(--gap) - var(--tile)) / 2,
+        100svh - var(--page-chrome) - var(--square) - 2.45 * var(--display-size) -
+          max(12px, 0.4 * var(--display-size))
+      )
+    );
+  }
+}
+
+/* Featured project. Below 1024px: the title tile and game art side by side,
+   then the description full width (the same tiles as the homepage). From
+   1024px: the two featured squares, and the description takes the rest. */
+.featured {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+@media (min-width: 1024px) {
+  .featured {
+    grid-template-columns: var(--feature) var(--feature) minmax(0, 1fr);
+  }
+}
+
+/* a color tile with its title at the top (and optional text at the bottom).
+   Padding in % is a share of the tile's width; text inside is sized to the
+   tile with cqi. */
+.project-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8%;
+  color: #000;
+}
+
+.featured-title,
+.project-title {
+  font-weight: bold;
+  line-height: 1.05;
+  /* keeps a wrapped title clear of the ↗ */
+  padding-right: 10cqi;
+  text-box: trim-start cap alphabetic;
+}
+
+.featured-title {
+  font-size: clamp(1.25rem, 14cqi, 3.5rem);
+}
+
+.project-title {
+  font-size: clamp(0.75rem, 13cqi, 2.5rem);
+}
+
+.project-description {
+  font-size: clamp(0.5rem, 7cqi, 1rem);
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+/* the featured square is bigger, so its text can be too */
+.featured-description {
+  font-size: clamp(0.625rem, 5.5cqi, 1.25rem);
+}
+
+.tile-arrow {
+  position: absolute;
+  top: 6%;
+  right: 7%;
+  font-size: clamp(0.75rem, 9cqi, 1.5rem);
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* screenshots show whole, on a tint of the project's color */
+.tile-photo .project-screenshot {
+  object-fit: contain;
+  padding: 6%;
+}
+
+/* The description, top-aligned with the tiles beside it. The raven floats at
+   the right, so the text fills the column above it and wraps around its left
+   side; as a float it can never cover the text. It sits beside the last
+   paragraph, and from 1024px a spacer pushes it down so its feet line up with
+   the bottom of the squares (if the text runs longer, it moves down with it).
+   The play link is pinned to the bottom left, in a band the text can't enter;
+   the raven reaches down into that band so its feet sit beside the link. */
+.featured-text {
+  grid-column: 1 / -1;
+  display: flow-root;
+  position: relative;
+  min-width: 0;
+  /* the play link's line plus the space above it */
+  --play-band: 2.15em;
+  padding-bottom: var(--play-band);
+  font-size: clamp(0.9375rem, calc(var(--tile) * 0.068), 1.125rem);
+  font-weight: bold;
+  line-height: 1.35;
+  --raven-width: clamp(80px, 26%, 130px);
+  /* how far the raven reaches into the page margin */
+  --raven-bleed: 12px;
+}
+
+.featured-text > p {
+  max-width: 65ch;
+}
+
+.featured-text > p:not(:first-of-type) {
+  margin-top: 0.8em;
+}
+
+.featured-text > p:first-of-type {
+  text-box: trim-start cap alphabetic;
+}
+
+.featured-play {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  line-height: 1.35;
+}
+
+/* raven.png is 3097x2922 (height 0.9435 of its width) with transparent space
+   around the bird: about 25% of the width on the left, 28% on the right, 7% of
+   the height on top and 12% at the bottom. The negative margins trim most of
+   that, so the text wraps close to the bird, the bird reaches into the page
+   margin, and its feet sit on the bottom of the column (the bottom margin also
+   covers the play link's band). What's left of the float is 0.7645 of its
+   width tall, minus the band. */
+.featured-raven {
+  float: right;
+  clear: right;
+  width: var(--raven-width);
+  max-width: none;
+  margin: calc(-0.066 * var(--raven-width)) calc(-0.28 * var(--raven-width) - var(--raven-bleed))
+    calc(-0.113 * var(--raven-width) - var(--play-band)) calc(-0.13 * var(--raven-width));
+  pointer-events: none;
+}
+
+.featured-raven-spacer {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .featured-text {
+    grid-column: auto;
+    --raven-width: clamp(100px, calc(var(--feature) * 0.4), 200px);
+    --raven-bleed: 24px;
+  }
+
+  /* an invisible float as tall as the squares minus the raven */
+  .featured-raven-spacer {
+    display: block;
+    float: right;
+    width: 0;
+    height: max(0px, var(--feature) - 0.7645 * var(--raven-width));
+  }
+}
+
+/* same size as the homepage's headings */
+.other-heading {
+  margin-top: calc(var(--display-size) * 1.25);
+  margin-bottom: max(12px, calc(var(--display-size) * 0.4));
+}
+
+/* Other projects, in pairs of squares. Below 1024px: one pair per row, the
+   same size as the featured tiles. From 1024px: five columns of --square with
+   an empty one between the pairs, which takes the extra width. */
+.other-projects {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap);
+}
+
+.project-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+@media (min-width: 1024px) {
+  .other-projects {
+    grid-template-columns: var(--square) var(--square) minmax(0, 1fr) var(--square) var(--square);
+  }
+
+  .project-pair {
+    grid-column: 1 / span 2;
+    grid-template-columns: subgrid;
+  }
+
+  .project-pair:nth-child(even) {
+    grid-column: 4 / span 2;
+  }
+}

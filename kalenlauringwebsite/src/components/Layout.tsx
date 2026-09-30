@@ -14,7 +14,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen w-full bg-page text-black px-4 py-4 overflow-x-clip">
-      <main className="w-full max-w-[1600px] mx-auto p-3 sm:px-6 sm:py-2">
+      {/* a size container, so the tiles can be sized to its width (cqi) */}
+      <main className="@container w-full max-w-[1220px] 2xl:max-w-[1400px] mx-auto p-3 sm:px-6 sm:py-2">
         <Nav />
         {children}
       </main>

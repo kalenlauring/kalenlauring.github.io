@@ -6,7 +6,7 @@ const linkClass = "hover:opacity-70 transition-opacity underline-offset-4 decora
 export default function Nav() {
   return (
     <nav aria-label="Main" className="mb-5">
-      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-base sm:text-lg font-bold">
+      <ul className="flex gap-x-6 whitespace-nowrap text-base sm:text-lg font-bold">
         {nav.map((item) => (
           <li key={item.label}>
             {"to" in item ? (
